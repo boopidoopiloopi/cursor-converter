@@ -1,38 +1,44 @@
 #!/usr/bin/env bash
 
-# Get full absolute path of this script
+# Resolve the absolute path to this script immediately
 SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
     # Respect the system default $TERMINAL variable if set
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
-        "$TERMINAL" -e bash "$SCRIPT_PATH" --child
+        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v foot &> /dev/null; then
-        foot bash "$SCRIPT_PATH" --child
+        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v kitty &> /dev/null; then
-        kitty bash "$SCRIPT_PATH" --child
+        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v alacritty &> /dev/null; then
-        alacritty -e bash "$SCRIPT_PATH" --child
+        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v gnome-terminal &> /dev/null; then
-        gnome-terminal -- bash "$SCRIPT_PATH" --child
+        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v konsole &> /dev/null; then
-        konsole -e bash "$SCRIPT_PATH" --child
+        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v xfce4-terminal &> /dev/null; then
-        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child"
+        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\""
     elif command -v xterm &> /dev/null; then
-        xterm -e bash "$SCRIPT_PATH" --child
+        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v x-terminal-emulator &> /dev/null; then
-        x-terminal-emulator -e bash "$SCRIPT_PATH" --child
+        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     else
         echo "No supported external terminal emulator found. Running in current shell..."
-        bash "$SCRIPT_PATH" --child
+        bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     fi
     exit 0
 fi
 
-# Set a trap to ensure the script deletes itself upon exit (even on errors/signals)
-trap 'rm -f "$SCRIPT_PATH"' EXIT
+# Store the script path passed as $2 from the parent process
+TARGET_SCRIPT_FILE="$2"
+
+# Capture directory where script lives BEFORE doing anything else
+SCRIPT_DIR="$(cd "$(dirname "$TARGET_SCRIPT_FILE")" && pwd)"
+
+# Ensure deletion happens when child terminal process exits
+trap 'rm -f "$TARGET_SCRIPT_FILE"' EXIT INT TERM
 
 # ==============================================================================
 # --- Code below runs inside the newly opened terminal window ---
@@ -52,7 +58,6 @@ else
 fi
 
 # Resolve absolute path to the main.py script
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 MAIN_PY_PATH="$SCRIPT_DIR/$TARGET_DIR/main.py"
 
 # Make main.py executable inside the cloned directory if it exists
