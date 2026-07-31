@@ -5,45 +5,46 @@ SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    # Respect system $TERMINAL variable if set (wrap in wait/block if possible)
+    CHILD_PID=""
+
+    # Launch terminal emulator and save its PID to wait on it specifically
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
-        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v foot &> /dev/null; then
-        # foot blocks by default
-        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v kitty &> /dev/null; then
-        # --detach is default in some versions; forcing foreground run
-        kitty --detach=no bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        kitty --detach=no bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v alacritty &> /dev/null; then
-        # alacritty blocks by default
-        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v gnome-terminal &> /dev/null; then
-        # --wait keeps the parent shell attached until the window closes
-        gnome-terminal --wait -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        gnome-terminal --wait -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v konsole &> /dev/null; then
-        # --nofork prevents konsole from detaching to background
-        konsole --nofork -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        konsole --nofork -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v xfce4-terminal &> /dev/null; then
-        # --disable-server prevents handing execution off to an existing terminal server
-        xfce4-terminal --disable-server -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\""
+        xfce4-terminal --disable-server -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\"" & CHILD_PID=$!
     elif command -v xterm &> /dev/null; then
-        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     elif command -v x-terminal-emulator &> /dev/null; then
-        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
     else
         echo "No supported external terminal emulator found. Running in current shell..."
         bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     fi
 
+    # Block parent shell execution until the child terminal PID terminates
+    if [ -n "$CHILD_PID" ]; then
+        wait "$CHILD_PID" 2>/dev/null
+    fi
+
     # ==============================================================================
-    # --- Parent Process Resumes Here (AFTER child window closes) ---
+    # --- Parent Process Resumes Here (Executes strictly in original terminal) ---
     # ==============================================================================
     echo ""
     echo "Всем приветы чизеты!"
     echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
     echo ""
 
-    # Launch main.py in background & detach safely across Bash and Fish
+    # Launch main.py in background & detach from original terminal
     if [ -f "./BoopiCursorConverter/main.py" ]; then
         ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
         disown 2>/dev/null || true
@@ -63,7 +64,7 @@ TARGET_SCRIPT_FILE="$2"
 SCRIPT_DIR="$(cd "$(dirname "$TARGET_SCRIPT_FILE")" && pwd)"
 
 # ==============================================================================
-# --- Code below runs inside the newly opened terminal window ---
+# --- Code below runs inside the newly opened terminal window ONLY ---
 # ==============================================================================
 
 REPO_URL="https://github.com/boopidoopiloopi/cursor-converter.git"
