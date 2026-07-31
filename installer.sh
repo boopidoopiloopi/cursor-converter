@@ -37,9 +37,6 @@ TARGET_SCRIPT_FILE="$2"
 # Capture directory where script lives BEFORE doing anything else
 SCRIPT_DIR="$(cd "$(dirname "$TARGET_SCRIPT_FILE")" && pwd)"
 
-# Ensure deletion happens when child terminal process exits
-trap 'rm -f "$TARGET_SCRIPT_FILE"' EXIT INT TERM
-
 # ==============================================================================
 # --- Code below runs inside the newly opened terminal window ---
 # ==============================================================================
