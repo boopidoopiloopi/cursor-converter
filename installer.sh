@@ -15,11 +15,14 @@ if [ "$1" != "--child" ]; then
     elif command -v alacritty &> /dev/null; then
         alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v gnome-terminal &> /dev/null; then
-        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        # --wait keeps the parent shell attached until the window closes
+        gnome-terminal --wait -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v konsole &> /dev/null; then
-        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        # --nofork prevents konsole from detaching to background
+        konsole --nofork -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v xfce4-terminal &> /dev/null; then
-        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\""
+        # --disable-server prevents handing execution off to an existing terminal server
+        xfce4-terminal --disable-server -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\""
     elif command -v xterm &> /dev/null; then
         xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v x-terminal-emulator &> /dev/null; then
@@ -30,17 +33,17 @@ if [ "$1" != "--child" ]; then
     fi
 
     # ==============================================================================
-    # --- Parent Process Resumes Here (After the child terminal window closes) ---
+    # --- Parent Process Resumes Here (After child window closes) ---
     # ==============================================================================
     printf "\nВсем приветы чизеты!\nСкрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py\n\n"
     
-    # Launch main.py in background & detach
+    # Launch main.py in background & detach safely across Bash and Fish
     if [ -f "./BoopiCursorConverter/main.py" ]; then
         ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
-        disown
+        disown 2>/dev/null || true
     fi
 
-    printf "\nНу все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py\nУдачи!\n"
+    printf "Ну все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py\nУдачи!\n\n"
 
     exit 0
 fi
