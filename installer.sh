@@ -28,6 +28,20 @@ if [ "$1" != "--child" ]; then
         echo "No supported external terminal emulator found. Running in current shell..."
         bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     fi
+
+    # ==============================================================================
+    # --- Parent Process Resumes Here (After the child terminal window closes) ---
+    # ==============================================================================
+    printf "\nВсем приветы чизеты!\nСкрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py\n\n"
+    
+    # Launch main.py in background & detach
+    if [ -f "./BoopiCursorConverter/main.py" ]; then
+        ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
+        disown
+    fi
+
+    printf "\nНу все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py\nУдачи!\n"
+
     exit 0
 fi
 
