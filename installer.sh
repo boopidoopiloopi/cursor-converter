@@ -5,46 +5,48 @@ SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    CHILD_PID=""
+    # Create a unique lockfile to track when the child window finishes
+    LOCK_FILE="/tmp/boopi_installer_$$.lock"
+    touch "$LOCK_FILE"
 
-    # Launch terminal emulator and save its PID to wait on it specifically
+    # Launch terminal emulator with the lockfile path passed as parameter 3
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
-        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v foot &> /dev/null; then
-        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v kitty &> /dev/null; then
-        kitty --detach=no bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v alacritty &> /dev/null; then
-        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v gnome-terminal &> /dev/null; then
-        gnome-terminal --wait -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v konsole &> /dev/null; then
-        konsole --nofork -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v xfce4-terminal &> /dev/null; then
-        xfce4-terminal --disable-server -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\"" & CHILD_PID=$!
+        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\" \"$LOCK_FILE\""
     elif command -v xterm &> /dev/null; then
-        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v x-terminal-emulator &> /dev/null; then
-        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" & CHILD_PID=$!
+        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     else
         echo "No supported external terminal emulator found. Running in current shell..."
-        bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     fi
 
-    # Block parent shell execution until the child terminal PID terminates
-    if [ -n "$CHILD_PID" ]; then
-        wait "$CHILD_PID" 2>/dev/null
-    fi
+    # BLOCK HERE: Pause the original terminal until the lock file disappears
+    while [ -f "$LOCK_FILE" ]; do
+        sleep 0.2
+    done
 
     # ==============================================================================
-    # --- Parent Process Resumes Here (Executes strictly in original terminal) ---
+    # --- Parent Process Resumes Here (Strictly in the ORIGINAL terminal) ---
     # ==============================================================================
     echo ""
     echo "Всем приветы чизеты!"
     echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
     echo ""
 
-    # Launch main.py in background & detach from original terminal
+    # Launch main.py in background from original terminal
     if [ -f "./BoopiCursorConverter/main.py" ]; then
         ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
         disown 2>/dev/null || true
@@ -57,14 +59,18 @@ if [ "$1" != "--child" ]; then
     exit 0
 fi
 
-# Store the script path passed as $2 from the parent process
+# Store parameters passed from parent
 TARGET_SCRIPT_FILE="$2"
+LOCK_FILE="$3"
 
 # Capture directory where script lives BEFORE doing anything else
 SCRIPT_DIR="$(cd "$(dirname "$TARGET_SCRIPT_FILE")" && pwd)"
 
+# Cleanup lock file automatically when this child terminal closes or crashes
+trap 'rm -f "$LOCK_FILE"' EXIT
+
 # ==============================================================================
-# --- Code below runs inside the newly opened terminal window ONLY ---
+# --- Code below runs inside the newly opened terminal window ---
 # ==============================================================================
 
 REPO_URL="https://github.com/boopidoopiloopi/cursor-converter.git"
