@@ -53,7 +53,6 @@ def mark_deps_complete(base_dir):
         f.write("dependencies_met=true\n")
 
 def check_system_deps_met():
-    # Check all required pacman and AUR packages
     deps = [
         "win2xcur",
         "pyside6",
@@ -70,8 +69,14 @@ def check_system_deps_met():
         if res.returncode != 0:
             return False
 
-    # Check binaries
     return shutil.which("yay") is not None and shutil.which("git") is not None
+
+def check_hyprcursor_installed():
+    return shutil.which("hyprcursor-util") is not None or subprocess.run(["pacman", "-Q", "hyprcursor"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+
+def install_hyprcursor(log_cb):
+    log_cb("[Hyprcursor] Installing hyprcursor package using pkexec...\n")
+    return run_cmd_log(["pkexec", "pacman", "-S", "--needed", "--noconfirm", "hyprcursor"], log_cb)
 
 def run_cmd_log(cmd, log_cb, cwd=None):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd)
@@ -123,7 +128,7 @@ def setup_repositories(base_dir, log_cb):
     if not os.path.isdir(c_dir):
         log_cb("[Setup] Cloning Cobalt...\n")
         run_cmd_log(["git", "clone", "https://github.com/PxRyzl/Cobalt/", c_dir, "--depth=1"], log_cb)
-
+        
         main_py = os.path.join(c_dir, "main.py")
         if os.path.isfile(main_py):
             with open(main_py, "r") as f:
@@ -137,6 +142,9 @@ def setup_repositories(base_dir, log_cb):
     return m_dir, c_dir
 
 def build_hyprcursor(target_theme_dir, theme_name, resize_algo, log_cb):
+    if not check_hyprcursor_installed():
+        raise FileNotFoundError("hyprcursor-util is not installed.")
+
     log_cb(f"[Hyprcursor] Compiling theme with algorithm '{resize_algo}'...\n")
     with tempfile.TemporaryDirectory(prefix="hypr_ext_") as tmp_ext, \
          tempfile.TemporaryDirectory(prefix="hypr_bld_") as tmp_bld:
@@ -191,7 +199,6 @@ def process_massive_resize(m_dir, target_theme_dir, theme_name, cursor_sizes_str
     config_file = os.path.join(m_dir, "config.sh")
     home_dir = os.path.expanduser("~")
 
-    # Format cursor sizes array
     sizes = [s.strip() for s in cursor_sizes_str.replace(',', ' ').split() if s.strip().isdigit()]
     formatted_sizes = " ".join(sizes) if sizes else "16 24 32 48 64 72 96 128 256"
 
