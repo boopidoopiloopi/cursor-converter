@@ -5,14 +5,17 @@ SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    # Respect the system default $TERMINAL variable if set
+    # Respect system $TERMINAL variable if set (wrap in wait/block if possible)
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
         "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v foot &> /dev/null; then
+        # foot blocks by default
         foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v kitty &> /dev/null; then
-        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
+        # --detach is default in some versions; forcing foreground run
+        kitty --detach=no bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v alacritty &> /dev/null; then
+        # alacritty blocks by default
         alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     elif command -v gnome-terminal &> /dev/null; then
         # --wait keeps the parent shell attached until the window closes
@@ -31,6 +34,24 @@ if [ "$1" != "--child" ]; then
         echo "No supported external terminal emulator found. Running in current shell..."
         bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     fi
+
+    # ==============================================================================
+    # --- Parent Process Resumes Here (AFTER child window closes) ---
+    # ==============================================================================
+    echo ""
+    echo "Всем приветы чизеты!"
+    echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
+    echo ""
+
+    # Launch main.py in background & detach safely across Bash and Fish
+    if [ -f "./BoopiCursorConverter/main.py" ]; then
+        ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+    fi
+
+    echo "Ну все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py"
+    echo "Удачи!"
+    echo ""
 
     exit 0
 fi
@@ -148,26 +169,5 @@ fi
 
 echo ""
 
-# Wait for user input before proceeding to print final output
+# Wait for user input before closing child window
 read -p "Press [Enter] to exit..."
-
-# ==============================================================================
-# --- Final Message Output & Background Execution (Inside Child Window) ---
-# ==============================================================================
-
-echo ""
-echo "Всем приветы чизеты!"
-echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
-echo ""
-
-# Launch main.py in background & detach safely across Bash and Fish
-if [ -f "./BoopiCursorConverter/main.py" ]; then
-    ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
-    disown 2>/dev/null || true
-fi
-
-echo "Ну все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py"
-echo "Удачи!"
-echo ""
-
-sleep 2
