@@ -32,19 +32,6 @@ if [ "$1" != "--child" ]; then
         bash "$SCRIPT_PATH" --child "$SCRIPT_PATH"
     fi
 
-    # ==============================================================================
-    # --- Parent Process Resumes Here (After child window closes) ---
-    # ==============================================================================
-    printf "\nВсем приветы чизеты!\nСкрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py\n\n"
-    
-    # Launch main.py in background & detach safely across Bash and Fish
-    if [ -f "./BoopiCursorConverter/main.py" ]; then
-        ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
-        disown 2>/dev/null || true
-    fi
-
-    printf "Ну все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py\nУдачи!\n\n"
-
     exit 0
 fi
 
@@ -161,5 +148,26 @@ fi
 
 echo ""
 
-# Wait for user input before closing
+# Wait for user input before proceeding to print final output
 read -p "Press [Enter] to exit..."
+
+# ==============================================================================
+# --- Final Message Output & Background Execution (Inside Child Window) ---
+# ==============================================================================
+
+echo ""
+echo "Всем приветы чизеты!"
+echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
+echo ""
+
+# Launch main.py in background & detach safely across Bash and Fish
+if [ -f "./BoopiCursorConverter/main.py" ]; then
+    ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
+    disown 2>/dev/null || true
+fi
+
+echo "Ну все, чтобы запустить, входишь в папку BoopiCursorConverter и запускаешь main.py"
+echo "Удачи!"
+echo ""
+
+sleep 2
