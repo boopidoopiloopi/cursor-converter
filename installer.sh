@@ -5,16 +5,18 @@ SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    if command -v gnome-terminal &> /dev/null; then
+    if command -v foot &> /dev/null; then
+        foot bash "$SCRIPT_PATH" --child
+    elif command -v kitty &> /dev/null; then
+        kitty bash "$SCRIPT_PATH" --child
+    elif command -v alacritty &> /dev/null; then
+        alacritty -e bash "$SCRIPT_PATH" --child
+    elif command -v gnome-terminal &> /dev/null; then
         gnome-terminal -- bash "$SCRIPT_PATH" --child
     elif command -v konsole &> /dev/null; then
         konsole -e bash "$SCRIPT_PATH" --child
     elif command -v xfce4-terminal &> /dev/null; then
         xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child"
-    elif command -v kitty &> /dev/null; then
-        kitty bash "$SCRIPT_PATH" --child
-    elif command -v alacritty &> /dev/null; then
-        alacritty -e bash "$SCRIPT_PATH" --child
     elif command -v xterm &> /dev/null; then
         xterm -e bash "$SCRIPT_PATH" --child
     elif command -v x-terminal-emulator &> /dev/null; then
