@@ -4,12 +4,6 @@
 SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
-#!/usr/bin/env bash
-
-# Get full absolute path of this script
-SCRIPT_PATH="$(readlink -f "$0")"
-
-# 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
     # Respect the system default $TERMINAL variable if set
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
@@ -54,17 +48,21 @@ else
     git clone "$REPO_URL" "$TARGET_DIR"
 fi
 
+# Resolve absolute path to the main.py script
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+MAIN_PY_PATH="$SCRIPT_DIR/$TARGET_DIR/main.py"
+
 # Make main.py executable inside the cloned directory if it exists
-if [ -f "./$TARGET_DIR/main.py" ]; then
-    chmod u+x "./$TARGET_DIR/main.py"
-    echo "Set executable permission on ./$TARGET_DIR/main.py"
+if [ -f "$MAIN_PY_PATH" ]; then
+    chmod u+x "$MAIN_PY_PATH"
+    echo "Set executable permission on $MAIN_PY_PATH"
 else
-    echo "Warning: ./$TARGET_DIR/main.py not found."
+    echo "Warning: $MAIN_PY_PATH not found."
 fi
 
 echo ""
 echo "=========================================="
-echo "        2. Checking Dependencies          "
+echo "         2. Checking Dependencies         "
 echo "=========================================="
 
 MISSING_DEPS=0
@@ -108,6 +106,37 @@ else
     echo "Please install them using your Linux package manager."
 fi
 echo "------------------------------------------"
+echo ""
+
+echo "=========================================="
+echo "     3. Creating .desktop Launcher        "
+echo "=========================================="
+
+DESKTOP_DIR="$HOME/.local/share/applications"
+DESKTOP_FILE="$DESKTOP_DIR/BoopiCursorConverter.desktop"
+
+mkdir -p "$DESKTOP_DIR"
+
+cat <<EOF > "$DESKTOP_FILE"
+[Desktop Entry]
+Version=67.69
+Type=Application
+Name=Boopi Cursor Converter
+Comment=Cheese Cheese Cheese (сыр то есть)
+Exec=python3 "$MAIN_PY_PATH"
+Path=$SCRIPT_DIR/$TARGET_DIR
+Terminal=false
+Categories=Utility;Development;
+EOF
+
+chmod +x "$DESKTOP_FILE"
+echo "[OK] Created launcher at $DESKTOP_FILE"
+
+# Refresh desktop application database if utility exists
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database "$DESKTOP_DIR" &> /dev/null
+fi
+
 echo ""
 
 # Wait for user input before closing
