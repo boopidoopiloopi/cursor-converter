@@ -9,13 +9,13 @@ SCRIPT_PATH="$(readlink -f "$0")"
 # Get full absolute path of this script
 SCRIPT_PATH="$(readlink -f "$0")"
 
-# 1. If not running inside the child process, launch a new terminal
+# 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    # Optional: If already inside Foot/Kitty/Alacritty, just run directly instead of spawning a new window
-    if [ -n "$FOOT_SOCKET" ] || [ -n "$KITTY_WINDOW_ID" ] || [ -n "$ALACRITTY_SOCKET" ] || [ -n "$ALACRITTY_LOG" ]; then
-        exec bash "$SCRIPT_PATH" --child
+    # Respect the system default $TERMINAL variable if set
+    if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
+        "$TERMINAL" -e bash "$SCRIPT_PATH" --child
     elif command -v foot &> /dev/null; then
-        foot bash -c "bash \"$SCRIPT_PATH\" --child"
+        foot bash "$SCRIPT_PATH" --child
     elif command -v kitty &> /dev/null; then
         kitty bash "$SCRIPT_PATH" --child
     elif command -v alacritty &> /dev/null; then
