@@ -4,7 +4,7 @@ import locale
 
 STRINGS = {
     'en': {
-        "app_title": "Cheese Cheese Cheese",
+        "app_title": "Cursor Theme Manager",
         "advanced": "Advanced",
         "manual": "Manual",
         "download_deps": "Download Dependencies",
@@ -39,10 +39,14 @@ STRINGS = {
         "error_no_name": "[Error] Please enter a Cursor Theme Name.",
         "tooltip_launch_cobalt": "Please launch Cobalt Converter first.",
         "select_theme_picker": "Select Theme Folder or index.theme File",
-        "lang_code": "RU"
+        "lang_code": "RU",
+        "hypr_missing_title": "Hyprcursor Dependency Missing",
+        "hypr_missing_desc": "Building Hyprcursor themes for Hyprland requires 'hyprcursor' (hyprcursor-util). Would you like to install it now using Polkit, or disable Hyprcursor generation?",
+        "install_hypr": "Install hyprcursor",
+        "skip_hypr": "Disable & Continue"
     },
     'ru': {
-        "app_title": "Чиз Чиз Чиииз",
+        "app_title": "Менеджер тем курсоров",
         "advanced": "Расширенные",
         "manual": "Справка",
         "download_deps": "Загрузить зависимости",
@@ -77,7 +81,11 @@ STRINGS = {
         "error_no_name": "[Ошибка] Пожалуйста, введите имя темы курсоров.",
         "tooltip_launch_cobalt": "Пожалуйста, сначала запустите конвертер Cobalt.",
         "select_theme_picker": "Выберите папку темы или файл index.theme",
-        "lang_code": "EN"
+        "lang_code": "EN",
+        "hypr_missing_title": "Отсутствует зависимость Hyprcursor",
+        "hypr_missing_desc": "Сборка тем Hyprcursor для Hyprland требует пакет 'hyprcursor' (hyprcursor-util). Хотите установить его сейчас через Polkit или пропустить сборку Hyprcursor?",
+        "install_hypr": "Установить hyprcursor",
+        "skip_hypr": "Отключить Hyprcursor и продолжить"
     }
 }
 
