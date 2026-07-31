@@ -31,6 +31,9 @@ if [ "$1" != "--child" ]; then
     exit 0
 fi
 
+# Set a trap to ensure the script deletes itself upon exit (even on errors/signals)
+trap 'rm -f "$SCRIPT_PATH"' EXIT
+
 # ==============================================================================
 # --- Code below runs inside the newly opened terminal window ---
 # ==============================================================================
