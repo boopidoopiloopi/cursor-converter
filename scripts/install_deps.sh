@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+INSTALL_GTK3_PICKER="$1"
+
 echo "[Step 0] Checking Arch Linux Dependencies..."
 
 if ! command -v yay &> /dev/null; then
