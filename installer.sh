@@ -5,11 +5,11 @@ SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    # Create a unique lockfile to track when the child window finishes
+    # Create a unique lockfile based on parent PID
     LOCK_FILE="/tmp/boopi_installer_$$.lock"
     touch "$LOCK_FILE"
 
-    # Launch terminal emulator with the lockfile path passed as parameter 3
+    # Launch terminal emulator, passing LOCK_FILE as parameter 3
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
         "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     elif command -v foot &> /dev/null; then
@@ -33,20 +33,20 @@ if [ "$1" != "--child" ]; then
         bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
     fi
 
-    # BLOCK HERE: Pause the original terminal until the lock file disappears
+    # BLOCK HERE: Keep the original terminal waiting until the lockfile disappears
     while [ -f "$LOCK_FILE" ]; do
         sleep 0.2
     done
 
     # ==============================================================================
-    # --- Parent Process Resumes Here (Strictly in the ORIGINAL terminal) ---
+    # --- Parent Process Resumes Here (Executes ONLY in the ORIGINAL terminal) ---
     # ==============================================================================
     echo ""
     echo "Всем приветы чизеты!"
     echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
     echo ""
 
-    # Launch main.py in background from original terminal
+    # Launch main.py in background from original shell context
     if [ -f "./BoopiCursorConverter/main.py" ]; then
         ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
         disown 2>/dev/null || true
@@ -59,14 +59,14 @@ if [ "$1" != "--child" ]; then
     exit 0
 fi
 
-# Store parameters passed from parent
+# Store parameters passed from parent process
 TARGET_SCRIPT_FILE="$2"
 LOCK_FILE="$3"
 
 # Capture directory where script lives BEFORE doing anything else
 SCRIPT_DIR="$(cd "$(dirname "$TARGET_SCRIPT_FILE")" && pwd)"
 
-# Cleanup lock file automatically when this child terminal closes or crashes
+# Ensure lockfile is removed even if child window is forcibly closed or crashes
 trap 'rm -f "$LOCK_FILE"' EXIT
 
 # ==============================================================================
