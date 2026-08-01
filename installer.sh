@@ -5,48 +5,56 @@ SCRIPT_PATH="$(readlink -f "$0")"
 
 # 1. If not running inside the new spawned terminal window, launch a new terminal
 if [ "$1" != "--child" ]; then
-    # Create a unique lockfile based on parent PID
-    LOCK_FILE="/tmp/boopi_installer_$$.lock"
-    touch "$LOCK_FILE"
+    # Create a unique FIFO (named pipe) to synchronize parent and child
+    SYNC_PIPE="/tmp/boopi_sync_$$"
+    rm -f "$SYNC_PIPE"
+    mkfifo "$SYNC_PIPE"
 
-    # Launch terminal emulator, passing LOCK_FILE as parameter 3
+    # Ensure cleanup of the pipe if the parent is killed
+    trap 'rm -f "$SYNC_PIPE"' EXIT
+
+    # Launch terminal emulator, passing the pipe path as parameter 3
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
-        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v foot &> /dev/null; then
-        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v kitty &> /dev/null; then
-        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v alacritty &> /dev/null; then
-        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v gnome-terminal &> /dev/null; then
-        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v konsole &> /dev/null; then
-        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v xfce4-terminal &> /dev/null; then
-        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\" \"$LOCK_FILE\""
+        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\" \"$SYNC_PIPE\"" &
     elif command -v xterm &> /dev/null; then
-        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     elif command -v x-terminal-emulator &> /dev/null; then
-        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
     else
         echo "No supported external terminal emulator found. Running in current shell..."
-        bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$LOCK_FILE"
+        bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE"
     fi
 
-    # BLOCK HERE: Keep the original terminal waiting until the lockfile disappears
-    while [ -f "$LOCK_FILE" ]; do
-        sleep 0.2
-    done
+    # ==============================================================================
+    # BLOCK HERE: Read from pipe. This completely freezes the original shell 
+    # until the child window closes and terminates its connection to the pipe.
+    # ==============================================================================
+    cat "$SYNC_PIPE" >/dev/null 2>&1
+
+    # Clean up the pipe
+    rm -f "$SYNC_PIPE"
 
     # ==============================================================================
-    # --- Parent Process Resumes Here (Executes ONLY in the ORIGINAL terminal) ---
+    # --- Parent Process Resumes Here (Strictly in the ORIGINAL terminal) ---
     # ==============================================================================
     echo ""
     echo "Всем приветы чизеты!"
     echo "Скрипт короче скачал ГОЛЫЙ (воу) репозиторий, и сделал так чтобы можно было запускать main.py"
     echo ""
 
-    # Launch main.py in background from original shell context
+    # Launch main.py in background & detach safely
     if [ -f "./BoopiCursorConverter/main.py" ]; then
         ./BoopiCursorConverter/main.py >/dev/null 2>&1 &
         disown 2>/dev/null || true
@@ -61,16 +69,20 @@ fi
 
 # Store parameters passed from parent process
 TARGET_SCRIPT_FILE="$2"
-LOCK_FILE="$3"
+SYNC_PIPE="$3"
 
 # Capture directory where script lives BEFORE doing anything else
 SCRIPT_DIR="$(cd "$(dirname "$TARGET_SCRIPT_FILE")" && pwd)"
 
-# Ensure lockfile is removed even if child window is forcibly closed or crashes
-trap 'rm -f "$LOCK_FILE"' EXIT
+# Open write file-descriptor on the pipe so parent unblocks when child exits
+if [ -p "$SYNC_PIPE" ]; then
+    exec 3>"$SYNC_PIPE"
+    # When this child script exits (either normally or window killed), close descriptor 3
+    trap 'exec 3>&-' EXIT
+fi
 
 # ==============================================================================
-# --- Code below runs inside the newly opened terminal window ---
+# --- Code below runs inside the newly opened terminal window ONLY ---
 # ==============================================================================
 
 REPO_URL="https://github.com/boopidoopiloopi/cursor-converter.git"
