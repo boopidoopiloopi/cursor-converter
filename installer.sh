@@ -99,6 +99,13 @@ else
     git clone "$REPO_URL" "$TARGET_DIR"
 fi
 
+# Delete installer.sh from the cloned repository if present
+INSTALLER_FILE="$SCRIPT_DIR/$TARGET_DIR/installer.sh"
+if [ -f "$INSTALLER_FILE" ]; then
+    rm -f "$INSTALLER_FILE"
+    echo "Removed installer.sh from $TARGET_DIR"
+fi
+
 # Resolve absolute path to the main.py script
 MAIN_PY_PATH="$SCRIPT_DIR/$TARGET_DIR/main.py"
 
