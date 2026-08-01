@@ -15,23 +15,23 @@ if [ "$1" != "--child" ]; then
 
     # Launch terminal emulator, passing the pipe path as parameter 3
     if [ -n "$TERMINAL" ] && command -v "$TERMINAL" &> /dev/null; then
-        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        "$TERMINAL" -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v foot &> /dev/null; then
-        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        foot bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v kitty &> /dev/null; then
-        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        kitty bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v alacritty &> /dev/null; then
-        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        alacritty -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v gnome-terminal &> /dev/null; then
-        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        gnome-terminal -- bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v konsole &> /dev/null; then
-        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        konsole -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v xfce4-terminal &> /dev/null; then
-        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\" \"$SYNC_PIPE\"" &
+        xfce4-terminal -e "bash \"$SCRIPT_PATH\" --child \"$SCRIPT_PATH\" \"$SYNC_PIPE\"" 2>/dev/null &
     elif command -v xterm &> /dev/null; then
-        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        xterm -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     elif command -v x-terminal-emulator &> /dev/null; then
-        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" &
+        x-terminal-emulator -e bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE" 2>/dev/null &
     else
         echo "No supported external terminal emulator found. Running in current shell..."
         bash "$SCRIPT_PATH" --child "$SCRIPT_PATH" "$SYNC_PIPE"
