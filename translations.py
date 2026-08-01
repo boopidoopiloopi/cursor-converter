@@ -4,7 +4,7 @@ import locale
 
 STRINGS = {
     'en': {
-        "app_title": "Cursor Theme Manager",
+        "app_title": "Cheese Cheese Cheese",
         "advanced": "Advanced",
         "manual": "Manual",
         "download_deps": "Download Dependencies",
@@ -46,7 +46,7 @@ STRINGS = {
         "skip_hypr": "Disable & Continue"
     },
     'ru': {
-        "app_title": "Менеджер тем курсоров",
+        "app_title": "Чиз Чиз Чиз",
         "advanced": "Расширенные",
         "manual": "Справка",
         "download_deps": "Загрузить зависимости",
